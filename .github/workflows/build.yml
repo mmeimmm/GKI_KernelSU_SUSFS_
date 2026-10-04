@@ -1314,6 +1314,16 @@ jobs:
           CONFIG_TMPFS_POSIX_ACL=y
           EOF
 
+                    # ==================== KVM 虚拟化与日志大水库修复 ====================
+          # 1. 把 Google 锁死的 protected 换成 nvhe，并注入 32M 命令行双保险
+          sed -i 's/kvm-arm.mode=protected/kvm-arm.mode=nvhe log_buf_len=32M/g' "$DEFCONFIG"
+
+          # 2. 原生将内核日志缓冲区做成 32MB (2^25 = 33,554,432 字节)，接住 0.000000 开头日志
+          sed -i '/CONFIG_LOG_BUF_SHIFT/d' "$DEFCONFIG"
+          echo "CONFIG_LOG_BUF_SHIFT=25" >> "$DEFCONFIG"
+          # ===================================================================
+
+
           # 禁用KSU 时源码里没有 KernelSU，CONFIG_KSU 不存在，写入会被 bazel 的 defconfig 检查拒绝
           if [ "${{ inputs.ksu_mode }}" != "禁用KSU" ]; then
             echo "CONFIG_KSU=y" >> "$DEFCONFIG"
